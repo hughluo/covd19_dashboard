@@ -5,4 +5,5 @@ RUN cd /tmp && pipenv lock --requirements > requirements.txt
 RUN pip install -r /tmp/requirements.txt
 COPY . /tmp/myapp
 RUN pip install /tmp/myapp
+EXPOSE 8050
 CMD python3 run app.py 
