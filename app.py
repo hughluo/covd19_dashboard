@@ -25,12 +25,19 @@ def init(app):
         value='cases'
     )
 
+    country_dropdown = dcc.Dropdown(
+        id='country',
+        options = [ {'label': country, 'value': country} for country in df_raw['country_name'].unique() ],
+        value='Germany'
+    )
+
 
     app.layout = html.Div([
         html.H1(children=dashboard_name),
         html.H4(children=f"datasource: {csv_link}"),
         html.H6(children=info),
         metric_type_dropdown,
+        country_dropdown,
         dcc.Graph(id='my-graph')
     ], style={'width': '500'})
 
