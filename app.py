@@ -36,14 +36,16 @@ def init(app):
         html.H1(children=dashboard_name),
         html.H4(children=f"datasource: {csv_link}"),
         html.H6(children=info),
+        html.H2(children="Select metric type"),
         metric_type_dropdown,
+        html.H2(children="Select country"),
         country_dropdown,
         dcc.Graph(id='my-graph')
     ], style={'width': '500'})
 
-    @app.callback(Output('my-graph', 'figure'), [Input('metric_type', 'value')])
-    def update_graph(metric_type):
-        selected_country = "Jordan"
+    @app.callback(Output('my-graph', 'figure'), [Input('metric_type', 'value'), Input('country', 'value')])
+    def update_graph(metric_type, selected_country):
+        # selected_country = "Jordan"
         df_date_world = df_raw[df_raw['country_name'] == 'World'].set_index(['date'])
         df_out_world = df_date_world[metric_type].sort_index(axis = 0).to_frame()
         df_date_selected = df_raw[df_raw['country_name'] == selected_country].set_index(['date'])
