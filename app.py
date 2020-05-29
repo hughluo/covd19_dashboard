@@ -7,6 +7,9 @@ import pandas as pd
 from pandas_datareader import data as web
 from datetime import datetime as dt
 
+csv_link = "https://covid19-lake.s3.us-east-2.amazonaws.com/enigma-aggregation/csv/global_countries/enigma_covid_19_global_countries.csv"
+df_raw = pd.read_csv(csv_link)
+
 def init(app):
     app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
 
@@ -28,10 +31,6 @@ def init(app):
 
     @app.callback(Output('my-graph', 'figure'), [Input('metric_type', 'value')])
     def update_graph(metric_type):
-
-        input_path = "./data.csv"
-
-        df_raw = pd.read_csv(input_path)
         df_date = df_raw[df_raw['country_name'] == 'Jordan'].set_index(['date'])
         df_out = df_date[metric_type].sort_index(axis = 0).to_frame()
         return {
