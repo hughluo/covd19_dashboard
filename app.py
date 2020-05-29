@@ -72,4 +72,4 @@ def init(app):
 if __name__ == '__main__':
     app = dash.Dash(dashboard_name)
     init(app)
-    app.run_server()
+    app.run_server(host='0.0.0.0', port=8050)
