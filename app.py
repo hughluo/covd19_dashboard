@@ -4,6 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 
 import pandas as pd
 
@@ -11,7 +12,6 @@ dashboard_name = "COVID-19 Dashboard"
 info = 'Germany'
 csv_link = "https://covid19-lake.s3.us-east-2.amazonaws.com/enigma-aggregation/csv/global_countries/enigma_covid_19_global_countries.csv"
 df_raw = pd.read_csv(csv_link)
-df_usa = df_raw[df_raw['country_name'] == 'United States'][['date', 'cases', 'deaths', 'tests']].reset_index(drop=True)
 timeline_info = "Timeline from https://www.nytimes.com/article/coronavirus-timeline.html"
 
 
@@ -41,12 +41,12 @@ df_increase_rate
 
 avg_after_childrensday = avg_increase_rate(df_increase_rate, '2020-05-01')
 avg_before_childrensday = avg_increase_rate(df_increase_rate, '2020-05-01', False)
-print(avg_after_childrensday)
-print(avg_before_childrensday)
+
+
 
 
 def init(app):
-  #  app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
+    #  app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
 
     metric_type_dropdown = dcc.Dropdown(
         id='metric_type',
@@ -74,6 +74,17 @@ def init(app):
         value='Obligation to notify',
     )
 
+    fig = px.line(df_raw,
+                  title="Effects of Corona Measures",
+                  x='date',
+                  y='cases',
+                  color='country_name',
+                  template='plotly_dark').update_layout(
+        {'plot_bgcolor': 'rgba(0, 0, 0, 0)',
+         'paper_bgcolor': 'rgba(0, 0, 0, 0)'})
+
+    fig.update_traces(mode="lines+markers")
+
     app.layout = html.Div([
         html.H1(children=dashboard_name),
         html.H4(children=f'datasource: {csv_link}'),
@@ -89,14 +100,7 @@ def init(app):
             id='my-graph',
             config={'displayModeBar': False},
             animate=True,
-            figure=px.line(df_raw,
-                           x='date',
-                           y='cases',
-                           color='country_name',
-                           template='plotly_dark').update_layout(
-                {'plot_bgcolor': 'rgba(0, 0, 0, 0)',
-                 'paper_bgcolor': 'rgba(0, 0, 0, 0)'})
-
+            figure=fig
         )])
 
 
