@@ -15,6 +15,7 @@ df_raw = pd.read_csv(csv_link)
 timeline_info = "Timeline from https://www.nytimes.com/article/coronavirus-timeline.html"
 
 
+
 def increase_rate(df_raw, country, metric):
     df = df_raw[df_raw['country_name'] == country][[
         'country_name', 'date', metric]].reset_index(drop=True)
@@ -37,15 +38,15 @@ def avg_increase_rate(df_with_increase_rate, event_date, after=True):
     return res
 
 
-df_increase_rate = increase_rate(df_raw, 'Germany', 'cases')
 
-avg_after_childrensday = avg_increase_rate(df_increase_rate, '2020-05-01')
-avg_before_childrensday = avg_increase_rate(
-    df_increase_rate, '2020-05-01', False)
+# avg_after_childrensday = avg_increase_rate(df_increase_rate, '2020-05-01')
+# avg_before_childrensday = avg_increase_rate(
+#     df_increase_rate, '2020-05-01', False)
 
 
 def init(app):
     #  app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
+    df_increase_rate = increase_rate(df_raw, 'Germany', 'cases')
 
     country_dropdown = dcc.Dropdown(
         id='country',
@@ -73,7 +74,7 @@ def init(app):
         html.H6(children=info),
         html.H2(children="Select country"),
         country_dropdown,
-        html.H2(children="Select measure"),
+        html.H2(children="Select event"),
         event_dropdown,
 
         dcc.Graph(
@@ -85,16 +86,32 @@ def init(app):
 
     @app.callback(Output('my-graph', 'figure'), [Input('event', 'value')])
     def update_graph(event):
+        df = df_increase_rate
+
+        df_before_event = df[df['date'] <= event]
+        df_after_event = df[df['date'] > event]
+
+        scatter_before_event = go.Scatter(
+            x=df_before_event['date'],
+            y=df_before_event['increase_rate'], 
+            mode='lines+markers',
+            line=dict(color="red", width=2),
+            connectgaps=True,
+        )
+        
+        scatter_after_event = go.Scatter(
+            x=df_after_event['date'],
+            y=df_after_event['increase_rate'], 
+            mode='lines+markers',
+            line=dict(color="blue", width=2),
+            connectgaps=True,
+        )
+
         fig = go.Figure()
         # Doc for go.Scatter: https://plotly.com/python/reference/#scatter
         # Examples: https://plotly.com/python/line-charts/
-        fig.add_trace(go.Scatter(
-            x=df_increase_rate['date'],
-            y=df_increase_rate['increase_rate'], 
-            mode='lines+markers',
-            line=dict(color="black", width=2),
-            connectgaps=True,
-        ))
+        fig.add_trace(scatter_before_event)
+        fig.add_trace(scatter_after_event)
 
         return fig
 
