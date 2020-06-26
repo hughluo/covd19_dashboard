@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import pandas as pd
 
 dashboard_name = "COVID-19 Dashboard"
-info = 'Germany'
+info = 'Made by Samir & Yinchi'
 csv_link = "https://covid19-lake.s3.us-east-2.amazonaws.com/enigma-aggregation/csv/global_countries/enigma_covid_19_global_countries.csv"
 df_raw = pd.read_csv(csv_link)
 timeline_info = "Timeline from https://www.nytimes.com/article/coronavirus-timeline.html"
@@ -26,9 +26,6 @@ def increase_rate(df_raw, country, metric):
     return res
 
 
-# avg_increase_rate_before_event(event_time) = avg(increase_rate(origin to event))
-# avg_increase_rate_after_event(event_time) = avg(increase_rate(event to today))
-
 def avg_increase_rate(df_with_increase_rate, event_date, after=True):
     df = df_with_increase_rate
     df_event = df[df['date'] > event_date]
@@ -38,15 +35,7 @@ def avg_increase_rate(df_with_increase_rate, event_date, after=True):
     return res
 
 
-
-# avg_after_childrensday = avg_increase_rate(df_increase_rate, '2020-05-01')
-# avg_before_childrensday = avg_increase_rate(
-#     df_increase_rate, '2020-05-01', False)
-
-
 def init(app):
-    #  app.css.append_css({'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
-    df_increase_rate = increase_rate(df_raw, 'Germany', 'cases')
 
     country_dropdown = dcc.Dropdown(
         id='country',
@@ -54,57 +43,77 @@ def init(app):
                  for country in df_raw['country_name'].unique()],
         value='Germany'
     )
+    
+    metric_dropdown = dcc.Dropdown(
+        id='metric',
+        options=[
+            {'label': 'Cases', 'value': 'cases'},
+            {'label': 'Deaths', 'value': 'deaths'},
+        ],
+        value='cases'
+    )
 
     event_dropdown = dcc.Dropdown(
         id='event',
         options=[
-            {'label': 'Obligation to notify', 'value': '2020-01-31'},
+            {'label': 'Notification obligation', 'value': '2020-01-31'},
             {'label': 'Stop of entry', 'value': '2020-03-17'},
             {'label': 'Contact restrictions', 'value': '2020-03-22'},
             {'label': 'Quarantine obligation', 'value': '2020-04-10'},
-            {'label': 'Masc obligation', 'value': '2020-04-22'},
-            {'label': 'Strong relaxations of Corona event', 'value': '2020-05-06'},
+            {'label': 'Mask obligation', 'value': '2020-04-22'},
+            {'label': 'Strong relaxations', 'value': '2020-05-06'},
         ],
-        value='Obligation to notify',
+        value='2020-01-31',
     )
 
     app.layout = html.Div([
         html.H1(children=dashboard_name),
         html.H4(children=f'datasource: {csv_link}'),
         html.H6(children=info),
-        html.H2(children="Select country"),
-        country_dropdown,
-        html.H2(children="Select event"),
+        html.H3(children="Select metric"),
+        metric_dropdown,
+        html.H3(children="Select event"),
         event_dropdown,
 
+        # output
+        html.H3(id='avg_before', style={'color': 'red'}),
+        html.H3(id='avg_after', style={'color': 'blue'}),
         dcc.Graph(
-            id='my-graph',
-            config={'displayModeBar': False},
-            animate=True,
-            # figure=fig
+            id='growth',
         )])
 
-    @app.callback(Output('my-graph', 'figure'), [Input('event', 'value')])
-    def update_graph(event):
-        df = df_increase_rate
+    @app.callback([Output('avg_before', 'children'), Output('avg_after', 'children'), Output('growth', 'figure')], [Input('metric', 'value'), Input('event', 'value')])
+    def update_graph(metric, event):
+        metric_name = metric.capitalize()
+        df = increase_rate(df_raw, 'Germany', metric)
 
+        avg_before_event = avg_increase_rate(df, event, False)
+        avg_after_event = avg_increase_rate(df, event)
+
+        avg_before_child = 'Average {} Growth Rate Before Event {:.4f}'.format(metric_name, avg_before_event)
+        avg_after_child = 'Average {} Growth Rate After Event {:.4f}'.format(metric_name, avg_after_event)
         df_before_event = df[df['date'] <= event]
         df_after_event = df[df['date'] > event]
 
+
         scatter_before_event = go.Scatter(
+            name = "Before Event",
             x=df_before_event['date'],
             y=df_before_event['increase_rate'], 
             mode='lines+markers',
             line=dict(color="red", width=2),
-            connectgaps=True,
+            showlegend = True,
+            # connectgaps=True,
         )
         
         scatter_after_event = go.Scatter(
+            name = "After Event",
             x=df_after_event['date'],
             y=df_after_event['increase_rate'], 
             mode='lines+markers',
             line=dict(color="blue", width=2),
-            connectgaps=True,
+            showlegend = True,
+            # connectgaps=True,
         )
 
         fig = go.Figure()
@@ -112,8 +121,12 @@ def init(app):
         # Examples: https://plotly.com/python/line-charts/
         fig.add_trace(scatter_before_event)
         fig.add_trace(scatter_after_event)
+        fig.update_layout(legend=dict(y=0.5, font_size=16))
+        fig.update_layout(title=f'{metric_name} Growth Rate in Germany',
+                   xaxis_title='Date',
+                   yaxis_title=f'{metric_name} Growth Rate')
 
-        return fig
+        return avg_before_child, avg_after_child, fig
 
 
 if __name__ == '__main__':
